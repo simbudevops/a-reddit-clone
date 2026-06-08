@@ -13,7 +13,6 @@ pipeline {
         IMAGE_NAME = "${DOCKER_USER}" + "/" + "${APP_NAME}"
         IMAGE_TAG = "${RELEASE}-${BUILD_NUMBER}"
         JENKINS_API_TOKEN = credentials("JENKINS_API_TOKEN")
-        JAVA_HOME = "/usr/lib/jvm/java-21-openjdk-amd64"
     }
     stages {
         stage('clean workspace') {
@@ -29,9 +28,10 @@ pipeline {
         stage("Sonarqube Analysis") {
             steps {
                 withSonarQubeEnv('SonarQube-Server') {
-                    sh '''export PATH=$JAVA_HOME/bin:$PATH
-                    $SCANNER_HOME/bin/sonar-scanner -Dsonar.projectName=Reddit-Clone-CI \
-                    -Dsonar.projectKey=Reddit-Clone-CI'''
+                    sh '''$SCANNER_HOME/bin/sonar-scanner \
+                    -Dsonar.projectName=Reddit-Clone-CI \
+                    -Dsonar.projectKey=Reddit-Clone-CI \
+                    -Dsonar.java.binaries=.'''
                 }
             }
         }
@@ -55,10 +55,10 @@ pipeline {
         stage("Build & Push Docker Image") {
             steps {
                 script {
-                    docker.withRegistry('',DOCKER_PASS) {
+                    docker.withRegistry('', DOCKER_PASS) {
                         docker_image = docker.build "${IMAGE_NAME}"
                     }
-                    docker.withRegistry('',DOCKER_PASS) {
+                    docker.withRegistry('', DOCKER_PASS) {
                         docker_image.push("${IMAGE_TAG}")
                         docker_image.push('latest')
                     }
